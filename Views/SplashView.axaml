@@ -1,0 +1,45 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="LauncherRoot.Views.SplashView">
+  <Grid HorizontalAlignment="Center"
+        VerticalAlignment="Center">
+    <StackPanel Spacing="24" HorizontalAlignment="Center">
+      <!-- Glow -->
+      <Border Width="120" Height="120"
+              CornerRadius="30"
+              Background="{DynamicResource AccentDimBrush}"
+              HorizontalAlignment="Center">
+        <Border.Effect>
+          <BlurEffect Radius="40" />
+        </Border.Effect>
+      </Border>
+
+      <!-- Logo -->
+      <Border Width="80" Height="80"
+              CornerRadius="20"
+              Background="{DynamicResource AccentBrush}"
+              HorizontalAlignment="Center"
+              Margin="0,-100,0,0">
+        <TextBlock Text="L"
+                   FontSize="36"
+                   FontWeight="Bold"
+                   Foreground="#000000"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center" />
+      </Border>
+
+      <TextBlock Text="LauncherRoot"
+                 FontSize="28"
+                 FontWeight="Bold"
+                 HorizontalAlignment="Center"
+                 Foreground="{DynamicResource TextPrimaryBrush}"
+                 Margin="0,12,0,0" />
+
+      <TextBlock Text="{Binding Localization[splash.loading]}"
+                 FontSize="13"
+                 HorizontalAlignment="Center"
+                 Foreground="{DynamicResource TextMutedBrush}"
+                 Opacity="{Binding Opacity}" />
+    </StackPanel>
+  </Grid>
+</UserControl>

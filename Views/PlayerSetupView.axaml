@@ -1,0 +1,162 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:LauncherRoot.ViewModels"
+             xmlns:models="clr-namespace:LauncherRoot.Models"
+             x:Class="LauncherRoot.Views.PlayerSetupView">
+  <Grid ColumnDefinitions="280,*" HorizontalAlignment="Center" VerticalAlignment="Center"
+        Margin="40">
+    <!-- LEFT: Accounts sidebar -->
+    <Border Background="{DynamicResource BgCardBrush}"
+            CornerRadius="16" Padding="18"
+            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
+      <StackPanel Spacing="14">
+        <TextBlock Text="{Binding Localization[player.accounts]}"
+                   FontSize="13" FontWeight="Bold"
+                   Foreground="{DynamicResource TextMutedBrush}"
+                   LetterSpacing="1"
+                   HorizontalAlignment="Center" />
+        <Border Height="1" Background="{DynamicResource BorderBrush}" />
+        <ListBox ItemsSource="{Binding Accounts}"
+                 BorderThickness="0"
+                 Background="Transparent"
+                 Height="300">
+          <ListBox.ItemTemplate>
+            <DataTemplate DataType="{x:Type models:PlayerConfig}">
+              <Button Classes="ghost" Padding="0" Margin="0,2" Cursor="Hand"
+                      Command="{Binding DataContext.SelectAccountCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                      CommandParameter="{Binding}">
+                <Border Padding="10,8" CornerRadius="8"
+                        Background="{DynamicResource BgSecondaryBrush}">
+                  <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel VerticalAlignment="Center">
+                      <TextBlock Text="{Binding Username}" FontSize="13" FontWeight="SemiBold"
+                                 Foreground="{DynamicResource TextPrimaryBrush}" />
+                      <TextBlock Text="{Binding AuthType}" FontSize="10"
+                                 Foreground="{DynamicResource TextMutedBrush}" />
+                    </StackPanel>
+                    <Button Grid.Column="1" Classes="ghost" Padding="4"
+                            Command="{Binding DataContext.DeleteAccountCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                            CommandParameter="{Binding}"
+                            Foreground="{DynamicResource ErrorBrush}">
+                      <TextBlock Text="✕" FontSize="14" />
+                    </Button>
+                  </Grid>
+                </Border>
+              </Button>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+        <TextBlock Text="{Binding Localization[player.clicktojoin]}"
+                   FontSize="10"
+                   Foreground="{DynamicResource TextMutedBrush}"
+                   HorizontalAlignment="Center" />
+      </StackPanel>
+    </Border>
+
+    <!-- RIGHT: Login area -->
+    <ScrollViewer Grid.Column="1">
+      <StackPanel Spacing="16" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="40,0">
+        <!-- Logo -->
+        <Border Width="60" Height="60" CornerRadius="14"
+                Background="{DynamicResource AccentBrush}"
+                HorizontalAlignment="Center">
+          <TextBlock Text="L" FontSize="28" FontWeight="Bold"
+                     Foreground="#000000"
+                     HorizontalAlignment="Center"
+                     VerticalAlignment="Center" />
+        </Border>
+
+        <TextBlock Text="LauncherRoot" FontSize="28" FontWeight="Bold"
+                   Foreground="{DynamicResource TextPrimaryBrush}"
+                   HorizontalAlignment="Center" />
+        <TextBlock Text="{Binding Localization[player.welcome]}"
+                   FontSize="14"
+                   Foreground="{DynamicResource TextSecondaryBrush}"
+                   HorizontalAlignment="Center" Margin="0,0,0,8" />
+
+        <!-- Offline -->
+        <Border Classes="card" Padding="24" Width="380">
+          <StackPanel Spacing="12">
+            <TextBlock Text="{Binding Localization[player.offline]}"
+                       FontSize="14" FontWeight="SemiBold"
+                       Foreground="{DynamicResource TextPrimaryBrush}" />
+            <TextBox Text="{Binding Username}"
+                     Watermark="{Binding Localization[player.placeholder]}"
+                     Height="40" FontSize="14"
+                     HorizontalContentAlignment="Center" />
+            <TextBlock Text="{Binding ErrorMessage}"
+                       Foreground="{DynamicResource ErrorBrush}"
+                       FontSize="12" HorizontalAlignment="Center"
+                       TextWrapping="Wrap" />
+            <Button Command="{Binding ContinueCommand}"
+                    Classes="secondary"
+                    Height="40" HorizontalAlignment="Stretch">
+              <TextBlock Text="{Binding Localization[player.continue]}" HorizontalAlignment="Center" />
+            </Button>
+          </StackPanel>
+        </Border>
+
+        <Grid ColumnDefinitions="Auto,*,Auto" Width="200" Margin="0,4">
+          <Border VerticalAlignment="Center" Height="1" Background="{DynamicResource BorderBrush}" />
+          <TextBlock Grid.Column="1" Text="{Binding Localization[player.or]}"
+                     FontSize="11" Foreground="{DynamicResource TextMutedBrush}"
+                     HorizontalAlignment="Center" Margin="12,0" />
+          <Border Grid.Column="2" VerticalAlignment="Center" Height="1" Background="{DynamicResource BorderBrush}" />
+        </Grid>
+
+        <!-- Microsoft -->
+        <Border Classes="card" Padding="24" Width="380">
+          <StackPanel Spacing="12">
+            <TextBlock Text="{Binding Localization[player.microsoft]}"
+                       FontSize="14" FontWeight="SemiBold"
+                       Foreground="{DynamicResource TextPrimaryBrush}" />
+            <TextBlock Text="{Binding Localization[player.microsoftdesc]}"
+                       FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"
+                       HorizontalAlignment="Center" />
+            <TextBlock Text="{Binding ErrorMessage}"
+                       Foreground="{DynamicResource ErrorBrush}" FontSize="12"
+                       HorizontalAlignment="Center" TextWrapping="Wrap" />
+            <Button Command="{Binding MicrosoftLoginCommand}"
+                    Classes="primary" Height="42"
+                    HorizontalAlignment="Stretch"
+                    IsEnabled="{Binding IsMicrosoftLoggingIn, Converter={StaticResource InverseBool}}">
+              <TextBlock Text="{Binding Localization[microsoft.login]}" FontSize="14" HorizontalAlignment="Center" />
+            </Button>
+            <TextBlock Text="{Binding Localization[player.microsoftnote]}"
+                       FontSize="10" Foreground="{DynamicResource TextMutedBrush}"
+                       TextWrapping="Wrap" HorizontalAlignment="Center" />
+          </StackPanel>
+        </Border>
+
+        <Grid ColumnDefinitions="Auto,*,Auto" Width="200" Margin="0,4">
+          <Border VerticalAlignment="Center" Height="1" Background="{DynamicResource BorderBrush}" />
+          <TextBlock Grid.Column="1" Text="{Binding Localization[player.or]}"
+                     FontSize="11" Foreground="{DynamicResource TextMutedBrush}"
+                     HorizontalAlignment="Center" Margin="12,0" />
+          <Border Grid.Column="2" VerticalAlignment="Center" Height="1" Background="{DynamicResource BorderBrush}" />
+        </Grid>
+
+        <!-- Ely.by -->
+        <Border Classes="card" Padding="24" Width="380">
+          <StackPanel Spacing="12">
+            <TextBlock Text="{Binding Localization[player.elyby]}"
+                       FontSize="14" FontWeight="SemiBold"
+                       Foreground="{DynamicResource TextPrimaryBrush}" />
+            <TextBlock Text="{Binding Localization[player.elybydesc]}"
+                       FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"
+                       HorizontalAlignment="Center" />
+            <TextBlock Text="{Binding ErrorMessage}"
+                       Foreground="{DynamicResource ErrorBrush}" FontSize="12"
+                       HorizontalAlignment="Center" TextWrapping="Wrap" />
+            <Button Command="{Binding ElybyLoginCommand}"
+                    Classes="primary" Height="42"
+                    HorizontalAlignment="Stretch"
+                    IsEnabled="{Binding IsElybyLoggingIn, Converter={StaticResource InverseBool}}">
+              <TextBlock Text="{Binding Localization[elyby.login]}" FontSize="14" HorizontalAlignment="Center" />
+            </Button>
+          </StackPanel>
+        </Border>
+      </StackPanel>
+    </ScrollViewer>
+  </Grid>
+</UserControl>

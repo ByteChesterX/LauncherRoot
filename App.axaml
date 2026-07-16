@@ -1,0 +1,61 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:views="clr-namespace:LauncherRoot.Views;assembly=LauncherRoot"
+             x:Class="LauncherRoot.App">
+  <Application.Resources>
+    <!-- Black-heavy dark theme -->
+    <Color x:Key="BgPrimary">#05080A</Color>
+    <Color x:Key="BgSecondary">#0A0E14</Color>
+    <Color x:Key="BgCard">#0D1219</Color>
+    <Color x:Key="BgCardElevated">#111721</Color>
+    <Color x:Key="BgHover">#131B26</Color>
+    <Color x:Key="BgSidebar">#030508</Color>
+    <Color x:Key="BgGlass">#0D1219CC</Color>
+    <Color x:Key="Accent">#3B82F6</Color>
+    <Color x:Key="AccentHover">#60A5FA</Color>
+    <Color x:Key="AccentDim">#3B82F625</Color>
+    <Color x:Key="Success">#166534</Color>
+    <Color x:Key="Warning">#A16207</Color>
+    <Color x:Key="Error">#B91C1C</Color>
+    <Color x:Key="TextPrimary">#E2E8F0</Color>
+    <Color x:Key="TextSecondary">#7E8EA0</Color>
+    <Color x:Key="TextMuted">#3B4A5C</Color>
+    <Color x:Key="Border">#162032</Color>
+    <Color x:Key="BorderLight">#1F2D42</Color>
+    <Color x:Key="Glow">#3B82F615</Color>
+
+    <SolidColorBrush x:Key="BgPrimaryBrush" Color="{DynamicResource BgPrimary}" />
+    <SolidColorBrush x:Key="BgSecondaryBrush" Color="{DynamicResource BgSecondary}" />
+    <SolidColorBrush x:Key="BgCardBrush" Color="{DynamicResource BgCard}" />
+    <SolidColorBrush x:Key="BgCardElevatedBrush" Color="{DynamicResource BgCardElevated}" />
+    <SolidColorBrush x:Key="BgHoverBrush" Color="{DynamicResource BgHover}" />
+    <SolidColorBrush x:Key="BgSidebarBrush" Color="{DynamicResource BgSidebar}" />
+    <SolidColorBrush x:Key="BgGlassBrush" Color="{DynamicResource BgGlass}" />
+    <SolidColorBrush x:Key="AccentBrush" Color="{DynamicResource Accent}" />
+    <SolidColorBrush x:Key="AccentHoverBrush" Color="{DynamicResource AccentHover}" />
+    <SolidColorBrush x:Key="AccentDimBrush" Color="{DynamicResource AccentDim}" />
+    <SolidColorBrush x:Key="SuccessBrush" Color="{DynamicResource Success}" />
+    <SolidColorBrush x:Key="WarningBrush" Color="{DynamicResource Warning}" />
+    <SolidColorBrush x:Key="ErrorBrush" Color="{DynamicResource Error}" />
+    <SolidColorBrush x:Key="TextPrimaryBrush" Color="{DynamicResource TextPrimary}" />
+    <SolidColorBrush x:Key="TextSecondaryBrush" Color="{DynamicResource TextSecondary}" />
+    <SolidColorBrush x:Key="TextMutedBrush" Color="{DynamicResource TextMuted}" />
+    <SolidColorBrush x:Key="BorderBrush" Color="{DynamicResource Border}" />
+    <SolidColorBrush x:Key="BorderLightBrush" Color="{DynamicResource BorderLight}" />
+    <SolidColorBrush x:Key="GlowBrush" Color="{DynamicResource Glow}" />
+
+    <views:InverseBoolConverter x:Key="InverseBool" />
+    <views:BoolToBrushConverter x:Key="BoolToBrush" />
+    <views:TabActiveConverter x:Key="TabActiveConverter" />
+    <views:TabBgConverter x:Key="TabBgConverter" />
+    <views:TabFgConverter x:Key="TabFgConverter" />
+    <views:FirstCharConverter x:Key="FirstCharConverter" />
+    <views:IsNullConverter x:Key="IsNullConverter" />
+    <views:IsNotNullConverter x:Key="IsNotNullConverter" />
+  </Application.Resources>
+
+  <Application.Styles>
+    <FluentTheme />
+    <StyleInclude Source="/Styles/Styles.axaml" />
+  </Application.Styles>
+</Application>

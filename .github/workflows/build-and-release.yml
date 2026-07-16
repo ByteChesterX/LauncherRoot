@@ -1,0 +1,99 @@
+name: Build and Release
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            runtime: linux-x64
+            artifact-name: "LauncherRoot-linux-x64"
+          - os: windows-latest
+            runtime: win-x64
+            artifact-name: "LauncherRoot-win-x64"
+          - os: macos-latest
+            runtime: osx-x64
+            artifact-name: "LauncherRoot-osx-x64"
+          - os: macos-latest
+            runtime: osx-arm64
+            artifact-name: "LauncherRoot-osx-arm64"
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup .NET SDK 8
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Install Linux dependencies
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libx11-dev libx11-xcb-dev libxcb1-dev libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libxcb-icccm4-dev libxcb-image0-dev libxcb-keysyms1-dev libxcb-randr0-dev libxcb-shm0-dev libxcb-sync-dev libxcb-xinerama0-dev libxcb-xkb-dev libxkbcommon-dev libxkbcommon-x11-dev libgl1-mesa-dev
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Publish
+      shell: bash
+      run: |
+        dotnet publish LauncherRoot.csproj \
+          --configuration Release \
+          --runtime ${{ matrix.runtime }} \
+          --self-contained true \
+          --output ./publish \
+          -p:PublishSingleFile=true \
+          -p:IncludeNativeLibrariesForSelfExtract=true \
+          -p:DebugType=none \
+          -p:DebugSymbols=false
+
+    - name: Prepare artifact
+      shell: bash
+      run: |
+        mkdir -p ./artifacts
+        if [ "${{ matrix.os }}" == "windows-latest" ]; then
+          cp ./publish/LauncherRoot.exe ./artifacts/${{ matrix.artifact-name }}.exe
+        else
+          cp ./publish/LauncherRoot ./artifacts/${{ matrix.artifact-name }}
+        fi
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.artifact-name }}
+        path: ./artifacts/*
+
+  create-release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.merged == true && (github.event.pull_request.base.ref == 'main' || github.event.pull_request.base.ref == 'master'))
+    permissions:
+      contents: write
+    
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: ./artifacts
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: nightly-${{ github.run_number }}
+        name: Nightly Build ${{ github.run_number }}
+        draft: false
+        prerelease: false  # 👈 false yapın
+        files: ./artifacts/**/*
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

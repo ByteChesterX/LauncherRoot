@@ -1,0 +1,39 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="LauncherRoot.Views.LogViewerWindow"
+        Width="800" Height="600"
+        WindowStartupLocation="CenterOwner">
+  <Grid RowDefinitions="Auto,*,Auto" Margin="0">
+    <Border Padding="14,10" Background="{DynamicResource BgSidebarBrush}">
+      <Grid ColumnDefinitions="Auto,*,Auto">
+        <TextBlock x:Name="HeaderText" FontSize="16" FontWeight="Bold"
+                   Foreground="{DynamicResource TextPrimaryBrush}"
+                   VerticalAlignment="Center" Margin="8,0,0,0" />
+        <Button Grid.Column="2" Classes="ghost" Padding="8,4"
+                Click="OnRefreshClick" Cursor="Hand">
+          <StackPanel Orientation="Horizontal" Spacing="4">
+            <TextBlock x:Name="RefreshText" FontSize="13" />
+          </StackPanel>
+        </Button>
+      </Grid>
+    </Border>
+
+    <ScrollViewer Grid.Row="1" Background="{DynamicResource BgSecondaryBrush}"
+                  HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+      <TextBlock x:Name="LogContent"
+                 FontFamily="Consolas, monospace"
+                 FontSize="12"
+                 Foreground="{DynamicResource TextPrimaryBrush}"
+                 Background="{DynamicResource BgSecondaryBrush}"
+                 Padding="14"
+                 TextWrapping="Wrap" />
+    </ScrollViewer>
+
+    <Border Grid.Row="2" Padding="14,8"
+            Background="{DynamicResource BgSidebarBrush}">
+      <TextBlock x:Name="FooterText"
+                 FontSize="11"
+                 Foreground="{DynamicResource TextMutedBrush}" />
+    </Border>
+  </Grid>
+</Window>

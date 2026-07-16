@@ -1,0 +1,63 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:LauncherRoot.ViewModels;assembly=LauncherRoot"
+        xmlns:views="clr-namespace:LauncherRoot.Views;assembly=LauncherRoot"
+        x:Class="LauncherRoot.Views.MainWindow"
+        Title="{Binding WindowTitle}"
+        Width="1200"
+        Height="760"
+        MinWidth="960"
+        MinHeight="640"
+        WindowStartupLocation="CenterScreen"
+        TransparencyLevelHint="Blur"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaChromeHints="NoChrome"
+        ExtendClientAreaTitleBarHeightHint="-1"
+        Background="Transparent"
+        Name="MainWin">
+  <Window.KeyBindings>
+    <KeyBinding Gesture="Escape" Command="{Binding GoBackCommand}" />
+    <KeyBinding Gesture="CTRL+W" Command="{Binding CloseWindowCommand}" />
+    <KeyBinding Gesture="F5" Command="{Binding RefreshCommand}" />
+  </Window.KeyBindings>
+  <Window.DataTemplates>
+    <DataTemplate DataType="{x:Type vm:PlayerSetupViewModel}">
+      <views:PlayerSetupView />
+    </DataTemplate>
+    <DataTemplate DataType="{x:Type vm:ThemeSelectionViewModel}">
+      <views:ThemeSelectionView />
+    </DataTemplate>
+    <DataTemplate DataType="{x:Type vm:SplashViewModel}">
+      <views:SplashView />
+    </DataTemplate>
+    <DataTemplate DataType="{x:Type vm:MainMenuViewModel}">
+      <views:MainMenuView />
+    </DataTemplate>
+    <DataTemplate DataType="{x:Type vm:ModManagementViewModel}">
+      <views:ModManagementView />
+    </DataTemplate>
+    <DataTemplate DataType="{x:Type vm:SettingsViewModel}">
+      <views:SettingsView />
+    </DataTemplate>
+    <DataTemplate DataType="{x:Type vm:InstanceCreateViewModel}">
+      <views:InstanceCreateView />
+    </DataTemplate>
+  </Window.DataTemplates>
+
+  <Panel>
+    <!-- Deep dark background -->
+    <Border Background="{DynamicResource BgPrimaryBrush}" />
+
+    <!-- Content -->
+    <Panel>
+      <ContentControl x:Name="OldPageHost"
+                      Classes="page"
+                      IsHitTestVisible="False"
+                      Opacity="0" />
+
+      <ContentControl x:Name="NewPageHost"
+                      Content="{Binding CurrentViewModel}"
+                      Classes="page" />
+    </Panel>
+  </Panel>
+</Window>

@@ -1,0 +1,262 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="LauncherRoot.Views.SettingsView">
+  <Grid RowDefinitions="Auto,*">
+    <!-- Top bar -->
+    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="16,12">
+      <Button Command="{Binding BackCommand}" Classes="ghost"
+              Width="100" Height="34" FontSize="13">
+        <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
+          <TextBlock Text="←" FontSize="15" VerticalAlignment="Center" />
+          <TextBlock Text="{Binding Localization[menu.back]}" VerticalAlignment="Center" />
+        </StackPanel>
+      </Button>
+    </StackPanel>
+
+    <!-- Content -->
+    <ScrollViewer Grid.Row="1" Margin="40,0,40,24">
+      <StackPanel Spacing="24" HorizontalAlignment="Center" Width="860">
+
+        <!-- Title -->
+        <TextBlock Text="{Binding Localization[settings.title]}"
+                   Classes="h1" HorizontalAlignment="Center" />
+
+        <!-- Reset danger card -->
+        <Border Classes="card" Padding="20"
+                BorderBrush="{DynamicResource ErrorBrush}" BorderThickness="1">
+          <Grid ColumnDefinitions="Auto,*,Auto">
+            <Border Width="40" Height="40" CornerRadius="10"
+                    Background="{DynamicResource ErrorBrush}" Opacity="0.15"
+                    VerticalAlignment="Center">
+              <TextBlock Text="⚠" FontSize="20" Foreground="{DynamicResource ErrorBrush}"
+                         HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Border>
+            <StackPanel Grid.Column="1" Margin="14,0,14,0" VerticalAlignment="Center">
+              <TextBlock Text="{Binding Localization[settings.reset]}"
+                         FontSize="14" FontWeight="SemiBold"
+                         Foreground="{DynamicResource TextPrimaryBrush}" />
+              <TextBlock Text="{Binding Localization[settings.resetdesc]}"
+                         FontSize="11" Foreground="{DynamicResource TextMutedBrush}" />
+            </StackPanel>
+            <Button Grid.Column="2" Classes="danger" Height="36" Width="100"
+                    Command="{Binding ResetLauncherCommand}" VerticalAlignment="Center">
+              <TextBlock Text="{Binding Localization[settings.resetbtn]}" FontSize="12" />
+            </Button>
+          </Grid>
+        </Border>
+
+        <!-- Settings grid -->
+        <Grid HorizontalAlignment="Center" Width="860"
+              ColumnDefinitions="410,20,410"
+              RowDefinitions="Auto,14,Auto,14,Auto,14,Auto,14,Auto,14,Auto,14,Auto">
+
+          <!-- RAM -->
+          <Border Grid.Row="0" Classes="card" Padding="20">
+            <StackPanel Spacing="12">
+              <TextBlock Text="{Binding Localization[settings.ram]}"
+                         FontSize="14" FontWeight="SemiBold"
+                         Foreground="{DynamicResource TextPrimaryBrush}">
+                <Run Text="{Binding RamGB, StringFormat=': {0} GB'}"
+                     Foreground="{DynamicResource AccentBrush}" />
+              </TextBlock>
+              <Slider Minimum="1" Maximum="16" TickFrequency="1"
+                      Value="{Binding RamGB}" IsSnapToTickEnabled="True" />
+              <Grid ColumnDefinitions="*,*">
+                <TextBlock Text="1 GB" FontSize="10" Foreground="{DynamicResource TextMutedBrush}" />
+                <TextBlock Text="16 GB" Grid.Column="1" FontSize="10"
+                           Foreground="{DynamicResource TextMutedBrush}" HorizontalAlignment="Right" />
+              </Grid>
+            </StackPanel>
+          </Border>
+
+          <!-- FPS -->
+          <Border Grid.Row="0" Grid.Column="2" Classes="card" Padding="20">
+            <StackPanel Spacing="12">
+              <TextBlock Text="{Binding Localization[settings.fps]}"
+                         FontSize="14" FontWeight="SemiBold"
+                         Foreground="{DynamicResource TextPrimaryBrush}" />
+              <ComboBox ItemsSource="{Binding FpsOptions}"
+                        SelectedIndex="{Binding SelectedFpsIndex}"
+                        Height="38" Width="200" HorizontalAlignment="Left" />
+            </StackPanel>
+          </Border>
+
+          <!-- Theme -->
+          <Border Grid.Row="2" Classes="card" Padding="20">
+            <StackPanel Spacing="12">
+              <TextBlock Text="{Binding Localization[settings.theme]}"
+                         FontSize="14" FontWeight="SemiBold"
+                         Foreground="{DynamicResource TextPrimaryBrush}" />
+              <Grid ColumnDefinitions="*,Auto,Auto">
+                <TextBlock Text="{Binding Localization[settings.theme.light]}" FontSize="12"
+                           Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" />
+                <ToggleSwitch Grid.Column="1" IsChecked="{Binding IsDarkTheme}" Margin="12,0,8,0" />
+                <TextBlock Text="{Binding Localization[settings.theme.dark]}" FontSize="12"
+                           Foreground="{DynamicResource TextSecondaryBrush}" Grid.Column="2"
+                           VerticalAlignment="Center" />
+              </Grid>
+            </StackPanel>
+          </Border>
+
+          <!-- Language -->
+          <Border Grid.Row="2" Grid.Column="2" Classes="card" Padding="20">
+            <StackPanel Spacing="12">
+              <TextBlock Text="{Binding Localization[settings.language]}"
+                         FontSize="14" FontWeight="SemiBold"
+                         Foreground="{DynamicResource TextPrimaryBrush}" />
+              <Grid ColumnDefinitions="*,Auto,Auto">
+                <TextBlock Text="EN" FontSize="12"
+                           Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" />
+                <ToggleSwitch Grid.Column="1" IsChecked="{Binding IsTurkish}" Margin="12,0,8,0" />
+                <TextBlock Text="TR" Grid.Column="2" FontSize="12"
+                           Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" />
+              </Grid>
+            </StackPanel>
+          </Border>
+
+          <!-- Java -->
+          <Border Grid.Row="4" Classes="card" Padding="20">
+            <StackPanel Spacing="12">
+              <TextBlock Text="{Binding Localization[settings.java]}"
+                         FontSize="14" FontWeight="SemiBold"
+                         Foreground="{DynamicResource TextPrimaryBrush}" />
+              <Grid ColumnDefinitions="*,Auto">
+                <TextBox Text="{Binding JavaPath}"
+                         Watermark="{Binding Localization[settings.java.placeholder]}"
+                         Height="38" FontSize="12" />
+                <Button Grid.Column="1" Classes="secondary" Height="38" Width="100" Margin="8,0,0,0"
+                        Command="{Binding BrowseJavaCommand}">
+                  <TextBlock Text="{Binding Localization[settings.java.browse]}" />
+                </Button>
+              </Grid>
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Text="{Binding Localization[settings.java.detecting]}" FontSize="10"
+                           Foreground="{DynamicResource TextMutedBrush}"
+                           IsVisible="{Binding IsDownloadingJava}" />
+                <TextBlock Text="{Binding JavaStatusText}" FontSize="10"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
+                           TextTrimming="CharacterEllipsis" />
+                <Button Command="{Binding DownloadJavaCommand}" Classes="secondary"
+                        Height="26" Padding="10,0" FontSize="10"
+                        IsVisible="{Binding IsJavaInstalled, Converter={StaticResource InverseBool}}">
+                  <StackPanel Orientation="Horizontal" Spacing="4">
+                    <TextBlock Text="⬇" FontSize="10" />
+                    <TextBlock Text="{Binding Localization[settings.java.download]}" />
+                  </StackPanel>
+                </Button>
+              </StackPanel>
+            </StackPanel>
+          </Border>
+
+          <!-- Resolution -->
+          <Border Grid.Row="4" Grid.Column="2" Classes="card" Padding="20">
+            <StackPanel Spacing="12">
+              <TextBlock Text="{Binding Localization[settings.resolution]}"
+                         FontSize="14" FontWeight="SemiBold"
+                         Foreground="{DynamicResource TextPrimaryBrush}" />
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Text="W:" FontSize="12" VerticalAlignment="Center"
+                           Foreground="{DynamicResource TextMutedBrush}" />
+                <TextBox Text="{Binding WindowWidth}" Height="36" FontSize="12" Width="80" />
+                <TextBlock Text="×" FontSize="12" VerticalAlignment="Center"
+                           Foreground="{DynamicResource TextMutedBrush}" />
+                <TextBlock Text="H:" FontSize="12" VerticalAlignment="Center"
+                           Foreground="{DynamicResource TextMutedBrush}" />
+                <TextBox Text="{Binding WindowHeight}" Height="36" FontSize="12" Width="80" />
+                <TextBlock Text="px" FontSize="12" VerticalAlignment="Center"
+                           Foreground="{DynamicResource TextMutedBrush}" />
+              </StackPanel>
+            </StackPanel>
+          </Border>
+
+          <!-- JVM Args (full width) -->
+          <Border Grid.Row="6" Grid.ColumnSpan="3" Classes="card" Padding="20">
+            <StackPanel Spacing="12">
+              <TextBlock Text="{Binding Localization[settings.jvmargs]}"
+                         FontSize="14" FontWeight="SemiBold"
+                         Foreground="{DynamicResource TextPrimaryBrush}" />
+              <TextBox Text="{Binding JvmArgs}"
+                       Watermark="{Binding Localization[settings.jvmargs.placeholder]}"
+                       Height="38" FontSize="12"
+                       FontFamily="Cascadia Code, Consolas, monospace" />
+            </StackPanel>
+          </Border>
+
+          <!-- Pre-launch -->
+          <Border Grid.Row="8" Classes="card" Padding="20">
+            <StackPanel Spacing="12">
+              <TextBlock Text="{Binding Localization[settings.prelaunch]}"
+                         FontSize="14" FontWeight="SemiBold"
+                         Foreground="{DynamicResource TextPrimaryBrush}" />
+              <TextBox Text="{Binding PreLaunchCommand}"
+                       Watermark="{Binding Localization[settings.prelaunch.placeholder]}"
+                       Height="38" FontSize="12"
+                       FontFamily="Cascadia Code, Consolas, monospace" />
+            </StackPanel>
+          </Border>
+
+          <!-- Wrapper -->
+          <Border Grid.Row="8" Grid.Column="2" Classes="card" Padding="20">
+            <StackPanel Spacing="12">
+              <TextBlock Text="{Binding Localization[settings.wrapper]}"
+                         FontSize="14" FontWeight="SemiBold"
+                         Foreground="{DynamicResource TextPrimaryBrush}" />
+              <TextBox Text="{Binding WrapperCommand}"
+                       Watermark="{Binding Localization[settings.wrapper.placeholder]}"
+                       Height="38" FontSize="12"
+                       FontFamily="Cascadia Code, Consolas, monospace" />
+            </StackPanel>
+          </Border>
+
+          <!-- Post-exit -->
+          <Border Grid.Row="10" Classes="card" Padding="20">
+            <StackPanel Spacing="12">
+              <TextBlock Text="{Binding Localization[settings.postexit]}"
+                         FontSize="14" FontWeight="SemiBold"
+                         Foreground="{DynamicResource TextPrimaryBrush}" />
+              <TextBox Text="{Binding PostExitCommand}"
+                       Watermark="{Binding Localization[settings.postexit.placeholder]}"
+                       Height="38" FontSize="12"
+                       FontFamily="Cascadia Code, Consolas, monospace" />
+            </StackPanel>
+          </Border>
+
+          <!-- Update (full width) -->
+          <Border Grid.Row="12" Grid.ColumnSpan="3" Classes="card" Padding="20">
+            <StackPanel Spacing="12">
+              <TextBlock Text="{Binding Localization[settings.update]}"
+                         FontSize="14" FontWeight="SemiBold"
+                         Foreground="{DynamicResource TextPrimaryBrush}" />
+              <TextBlock Text="{Binding CurrentVersion}" FontSize="11"
+                         Foreground="{DynamicResource TextMutedBrush}" />
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Command="{Binding CheckForUpdatesCommand}" Classes="secondary"
+                        Height="34" Padding="14,0" FontSize="12">
+                  <TextBlock Text="{Binding Localization[settings.update.check]}" />
+                </Button>
+                <TextBlock Text="{Binding UpdateStatus}" FontSize="10"
+                           Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis" />
+              </StackPanel>
+              <ProgressBar Value="0" Minimum="0" Maximum="1"
+                           IsVisible="{Binding IsCheckingUpdate}" IsIndeterminate="True" Height="3" />
+            </StackPanel>
+          </Border>
+
+          <!-- Desktop shortcut -->
+          <Border Grid.Row="14" Grid.ColumnSpan="3" Classes="card" Padding="20">
+            <StackPanel Spacing="12">
+              <TextBlock Text="{Binding Localization[settings.installdesktop]}"
+                         FontSize="14" FontWeight="SemiBold"
+                         Foreground="{DynamicResource TextPrimaryBrush}" />
+              <Button Command="{Binding InstallDesktopCommand}" Classes="secondary"
+                      Height="34" Padding="14,0" FontSize="12" HorizontalAlignment="Left">
+                <TextBlock Text="{Binding Localization[settings.installdesktop]}" />
+              </Button>
+            </StackPanel>
+          </Border>
+        </Grid>
+      </StackPanel>
+    </ScrollViewer>
+  </Grid>
+</UserControl>
