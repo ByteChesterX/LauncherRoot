@@ -120,8 +120,15 @@ public partial class InstanceCreateViewModel : ViewModelBase
                 .ToList();
 
             AvailableVersions = new ObservableCollection<string>(versions);
-            if (AvailableVersions.Count > 0)
+            if (_editingInstance != null)
+            {
+                if (!AvailableVersions.Contains(_editingInstance.Version))
+                    AvailableVersions.Insert(0, _editingInstance.Version);
+            }
+            else if (AvailableVersions.Count > 0)
+            {
                 SelectedVersion = AvailableVersions[0];
+            }
         }
         catch
         {
@@ -143,7 +150,14 @@ public partial class InstanceCreateViewModel : ViewModelBase
                 "1.8.9", "1.8.8", "1.8.7", "1.8.6", "1.8.5", "1.8.4", "1.8.3", "1.8.2", "1.8.1", "1.8",
                 "1.7.10", "1.7.9", "1.7.8", "1.7.7", "1.7.6", "1.7.5", "1.7.4", "1.7.3", "1.7.2"
             };
-            SelectedVersion = "1.21.4";
+            if (_editingInstance == null)
+            {
+                SelectedVersion = "1.21.4";
+            }
+            else if (!AvailableVersions.Contains(_editingInstance.Version))
+            {
+                AvailableVersions.Insert(0, _editingInstance.Version);
+            }
         }
         finally
         {
@@ -169,6 +183,7 @@ public partial class InstanceCreateViewModel : ViewModelBase
 
     private void UpdateInstanceName()
     {
+        if (_editingInstance != null) return;
         var loaderLabel = SelectedLoader switch
         {
             "fabric" => "Fabric",

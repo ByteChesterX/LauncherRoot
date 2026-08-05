@@ -136,21 +136,25 @@ public partial class MainMenuViewModel : ViewModelBase
 
     private void LoadServers(LauncherConfig cfg)
     {
-        if (cfg.Servers.Count == 0)
+        if (!cfg.ServersInitialized)
         {
-            cfg.Servers = new List<ServerInfo>
+            cfg.ServersInitialized = true;
+            if (cfg.Servers.Count == 0)
             {
-                new() { Name = "Hypixel", Address = "mc.hypixel.net" },
-                new() { Name = "Mineplex", Address = "us.mineplex.com" },
-                new() { Name = "Cubecraft", Address = "cubecraft.net" },
-                new() { Name = "The Hive", Address = "play.hivemc.com" },
-                new() { Name = "2b2t", Address = "2b2t.org" },
-                new() { Name = "Wynncraft", Address = "play.wynncraft.com" },
-                new() { Name = "Purple Prison", Address = "purpleprison.net" },
-                new() { Name = "ManaCube", Address = "play.manacube.com" },
-                new() { Name = "Plexus", Address = "plexus.gg" },
-                new() { Name = "Jartex", Address = "jartexnetwork.com" },
-            };
+                cfg.Servers = new List<ServerInfo>
+                {
+                    new() { Name = "Hypixel", Address = "mc.hypixel.net" },
+                    new() { Name = "Mineplex", Address = "us.mineplex.com" },
+                    new() { Name = "Cubecraft", Address = "cubecraft.net" },
+                    new() { Name = "The Hive", Address = "play.hivemc.com" },
+                    new() { Name = "2b2t", Address = "2b2t.org" },
+                    new() { Name = "Wynncraft", Address = "play.wynncraft.com" },
+                    new() { Name = "Purple Prison", Address = "purpleprison.net" },
+                    new() { Name = "ManaCube", Address = "play.manacube.com" },
+                    new() { Name = "Plexus", Address = "plexus.gg" },
+                    new() { Name = "Jartex", Address = "jartexnetwork.com" },
+                };
+            }
             _ = _config.SaveConfigNowAsync(cfg);
         }
 
@@ -318,9 +322,16 @@ public partial class MainMenuViewModel : ViewModelBase
     private async Task ShowBackups(Instance? instance)
     {
         if (instance == null) return;
-        var backups = await _backups.GetBackupsAsync(instance);
-        AvailableBackups = new ObservableCollection<BackupInfo>(backups);
-        ShowBackupPanel = true;
+        try
+        {
+            var backups = await _backups.GetBackupsAsync(instance);
+            AvailableBackups = new ObservableCollection<BackupInfo>(backups);
+            ShowBackupPanel = true;
+        }
+        catch (Exception ex)
+        {
+            _config.Log($"Yedek listesi hatası: {ex.Message}");
+        }
     }
 
     [RelayCommand]
@@ -340,7 +351,16 @@ public partial class MainMenuViewModel : ViewModelBase
         ShowStatusBar = true;
         HasError = false;
 
-        var ok = await _backups.RestoreAsync(instance, backup);
+        bool ok;
+        try
+        {
+            ok = await _backups.RestoreAsync(instance, backup);
+        }
+        catch (Exception ex)
+        {
+            _config.Log($"Geri yükleme hatası: {ex.Message}");
+            ok = false;
+        }
         if (ok)
             ShowBackupPanel = false;
         else
@@ -357,8 +377,15 @@ public partial class MainMenuViewModel : ViewModelBase
     private async Task DeleteBackup(BackupInfo? backup)
     {
         if (backup == null) return;
-        await _backups.DeleteBackupAsync(backup);
-        AvailableBackups.Remove(backup);
+        try
+        {
+            await _backups.DeleteBackupAsync(backup);
+            AvailableBackups.Remove(backup);
+        }
+        catch (Exception ex)
+        {
+            _config.Log($"Yedek silme hatası: {ex.Message}");
+        }
     }
 
     [RelayCommand(AllowConcurrentExecutions = true)]
@@ -367,7 +394,14 @@ public partial class MainMenuViewModel : ViewModelBase
         if (instance == null) return;
         StatusText = _localization["status.backingup"];
         ShowStatusBar = true;
-        await _backups.BackupAsync(instance);
+        try
+        {
+            await _backups.BackupAsync(instance);
+        }
+        catch (Exception ex)
+        {
+            _config.Log($"Yedekleme hatası: {ex.Message}");
+        }
         ShowStatusBar = false;
     }
 
@@ -402,99 +436,106 @@ public partial class MainMenuViewModel : ViewModelBase
         var groups = await GetOrLoadGroupsAsync();
         var cfg = await _config.LoadConfigAsync();
 
-        if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+        try
         {
-            var window = desktop.MainWindow;
-            if (window == null) return;
-
-            var dialog = new Avalonia.Controls.Window
+            if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
-                Title = _localization["group.select"],
-                SizeToContent = Avalonia.Controls.SizeToContent.WidthAndHeight,
-                CanResize = false,
-                WindowStartupLocation = Avalonia.Controls.WindowStartupLocation.CenterOwner,
-                Padding = new Avalonia.Thickness(20),
-                MinWidth = 300,
-            };
+                var window = desktop.MainWindow;
+                if (window == null) return;
 
-            var stack = new Avalonia.Controls.StackPanel { Spacing = 12 };
+                var dialog = new Avalonia.Controls.Window
+                {
+                    Title = _localization["group.select"],
+                    SizeToContent = Avalonia.Controls.SizeToContent.WidthAndHeight,
+                    CanResize = false,
+                    WindowStartupLocation = Avalonia.Controls.WindowStartupLocation.CenterOwner,
+                    Padding = new Avalonia.Thickness(20),
+                    MinWidth = 300,
+                };
 
-            var combo = new Avalonia.Controls.ComboBox
-            {
-                ItemsSource = new ObservableCollection<string>(["", .. groups]),
-                SelectedItem = instance.Group,
-                Width = 250,
-                Height = 34,
-            };
+                var stack = new Avalonia.Controls.StackPanel { Spacing = 12 };
 
-            var newGroupBox = new Avalonia.Controls.TextBox
-            {
-                Watermark = _localization["group.new"],
-                Width = 250,
-                Height = 34,
-            };
+                var combo = new Avalonia.Controls.ComboBox
+                {
+                    ItemsSource = new ObservableCollection<string>(["", .. groups]),
+                    SelectedItem = instance.Group,
+                    Width = 250,
+                    Height = 34,
+                };
 
-            var btnPanel = new Avalonia.Controls.StackPanel
-            {
-                Orientation = Avalonia.Layout.Orientation.Horizontal,
-                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
-                Spacing = 8,
-            };
+                var newGroupBox = new Avalonia.Controls.TextBox
+                {
+                    Watermark = _localization["group.new"],
+                    Width = 250,
+                    Height = 34,
+                };
 
-            var cancelBtn = new Avalonia.Controls.Button
-            {
-                Content = _localization["microsoft.cancel"],
-                MinWidth = 80,
-                Height = 32,
-                Classes = { "secondary" },
-            };
-            cancelBtn.Click += (_, _) => dialog.Close(false);
+                var btnPanel = new Avalonia.Controls.StackPanel
+                {
+                    Orientation = Avalonia.Layout.Orientation.Horizontal,
+                    HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right,
+                    Spacing = 8,
+                };
 
-            var okBtn = new Avalonia.Controls.Button
-            {
-                Content = "OK",
-                MinWidth = 80,
-                Height = 32,
-                Classes = { "primary" },
-            };
-            okBtn.Click += (_, _) => dialog.Close(true);
+                var cancelBtn = new Avalonia.Controls.Button
+                {
+                    Content = _localization["microsoft.cancel"],
+                    MinWidth = 80,
+                    Height = 32,
+                    Classes = { "secondary" },
+                };
+                cancelBtn.Click += (_, _) => dialog.Close(false);
 
-            btnPanel.Children.Add(cancelBtn);
-            btnPanel.Children.Add(okBtn);
+                var okBtn = new Avalonia.Controls.Button
+                {
+                    Content = "OK",
+                    MinWidth = 80,
+                    Height = 32,
+                    Classes = { "primary" },
+                };
+                okBtn.Click += (_, _) => dialog.Close(true);
 
-            stack.Children.Add(new Avalonia.Controls.TextBlock
-            {
-                Text = _localization["group.select"],
-                FontSize = 14,
-                FontWeight = Avalonia.Media.FontWeight.SemiBold,
-            });
-            stack.Children.Add(combo);
-            stack.Children.Add(new Avalonia.Controls.TextBlock
-            {
-                Text = _localization["group.or"],
-                FontSize = 11,
-                Foreground = Avalonia.Media.Brushes.Gray,
-            });
-            stack.Children.Add(newGroupBox);
-            stack.Children.Add(btnPanel);
-            dialog.Content = stack;
+                btnPanel.Children.Add(cancelBtn);
+                btnPanel.Children.Add(okBtn);
 
-            var result = await dialog.ShowDialog<bool>(window);
-            if (!result) return;
+                stack.Children.Add(new Avalonia.Controls.TextBlock
+                {
+                    Text = _localization["group.select"],
+                    FontSize = 14,
+                    FontWeight = Avalonia.Media.FontWeight.SemiBold,
+                });
+                stack.Children.Add(combo);
+                stack.Children.Add(new Avalonia.Controls.TextBlock
+                {
+                    Text = _localization["group.or"],
+                    FontSize = 11,
+                    Foreground = Avalonia.Media.Brushes.Gray,
+                });
+                stack.Children.Add(newGroupBox);
+                stack.Children.Add(btnPanel);
+                dialog.Content = stack;
 
-            var selectedGroup = !string.IsNullOrWhiteSpace(newGroupBox.Text)
-                ? newGroupBox.Text.Trim()
-                : (combo.SelectedItem as string ?? "");
+                var result = await dialog.ShowDialog<bool>(window);
+                if (!result) return;
 
-            instance.Group = selectedGroup;
-            await _instances.UpdateInstanceAsync(instance);
-            RebuildGroupedList();
+                var selectedGroup = !string.IsNullOrWhiteSpace(newGroupBox.Text)
+                    ? newGroupBox.Text.Trim()
+                    : (combo.SelectedItem as string ?? "");
 
-            if (!string.IsNullOrEmpty(selectedGroup) && !cfg.Groups.Contains(selectedGroup))
-            {
-                cfg.Groups.Add(selectedGroup);
-                await _config.SaveConfigAsync(cfg);
+                instance.Group = selectedGroup;
+                await _instances.UpdateInstanceAsync(instance);
+                RebuildGroupedList();
+
+                if (!string.IsNullOrEmpty(selectedGroup) && !cfg.Groups.Contains(selectedGroup))
+                {
+                    cfg.Groups.Add(selectedGroup);
+                    await _config.SaveConfigAsync(cfg);
+                }
             }
+        }
+        catch (Exception ex)
+        {
+            _config.Log($"Grup seçimi hatası: {ex.Message}");
         }
     }
 
@@ -522,24 +563,23 @@ public partial class MainMenuViewModel : ViewModelBase
         var logsPath = Path.Combine(_instances.GetInstanceGamePath(instance), "minecraft", "logs");
         if (!Directory.Exists(logsPath))
             logsPath = _config.GetLogsPath();
-        if (Directory.Exists(logsPath))
-        {
-            var psi = new System.Diagnostics.ProcessStartInfo
-            {
-                FileName = logsPath,
-                UseShellExecute = true,
-            };
-            System.Diagnostics.Process.Start(psi);
-        }
+        OpenFolder(logsPath);
     }
 
     [RelayCommand]
     private async Task DuplicateInstance(Instance? instance)
     {
         if (instance == null) return;
-        var clone = await _instances.DuplicateInstanceAsync(instance, $"{instance.Name} (kopya)");
-        InstanceList.Add(clone);
-        RebuildGroupedList();
+        try
+        {
+            var clone = await _instances.DuplicateInstanceAsync(instance, $"{instance.Name} (kopya)");
+            InstanceList.Add(clone);
+            RebuildGroupedList();
+        }
+        catch (Exception ex)
+        {
+            _config.Log($"Kopyalama hatası: {ex.Message}");
+        }
     }
 
     [RelayCommand]
@@ -612,14 +652,7 @@ public partial class MainMenuViewModel : ViewModelBase
         if (instance == null) return;
         var path = _instances.GetInstanceGamePath(instance);
         if (Directory.Exists(path))
-        {
-            var psi = new System.Diagnostics.ProcessStartInfo
-            {
-                FileName = path,
-                UseShellExecute = true,
-            };
-            System.Diagnostics.Process.Start(psi);
-        }
+            OpenFolder(path);
     }
 
     [RelayCommand]
@@ -636,12 +669,25 @@ public partial class MainMenuViewModel : ViewModelBase
         var path = Path.Combine(_instances.GetInstanceGamePath(instance), "minecraft", "screenshots");
         if (!Directory.Exists(path))
             Directory.CreateDirectory(path);
-        var psi = new System.Diagnostics.ProcessStartInfo
+        OpenFolder(path);
+    }
+
+    private void OpenFolder(string path)
+    {
+        if (string.IsNullOrEmpty(path) || !Directory.Exists(path)) return;
+        try
         {
-            FileName = path,
-            UseShellExecute = true,
-        };
-        System.Diagnostics.Process.Start(psi);
+            var psi = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = path,
+                UseShellExecute = true,
+            };
+            System.Diagnostics.Process.Start(psi);
+        }
+        catch (Exception ex)
+        {
+            _config.Log($"Klasör açılamadı ({path}): {ex.Message}");
+        }
     }
 
     [RelayCommand]
@@ -809,7 +855,7 @@ public partial class MainMenuViewModel : ViewModelBase
             LoadServers(cfg);
 
             var elapsed = (long)(DateTime.UtcNow - startTime).TotalSeconds;
-            _ = _instances.AddPlayTimeAsync(instance.Id, elapsed);
+            await _instances.AddPlayTimeAsync(instance.Id, elapsed);
             instance.PlayTimeSeconds += elapsed;
             Environment.Exit(0);
         }
@@ -888,7 +934,7 @@ public partial class MainMenuViewModel : ViewModelBase
         if (launched)
         {
             var elapsed = (long)(DateTime.UtcNow - startTime).TotalSeconds;
-            _ = _instances.AddPlayTimeAsync(instance.Id, elapsed);
+            await _instances.AddPlayTimeAsync(instance.Id, elapsed);
             instance.PlayTimeSeconds += elapsed;
             Environment.Exit(0);
         }

@@ -11,6 +11,7 @@ public class ConfigService : IConfigService
 
     private LauncherConfig? _cachedConfig;
     private readonly SemaphoreSlim _cacheLock = new(1, 1);
+    private readonly SemaphoreSlim _writeLock = new(1, 1);
     private CancellationTokenSource? _saveDebounceCts;
 
     public ConfigService()
@@ -39,8 +40,7 @@ public class ConfigService : IConfigService
         var path = Path.Combine(RootPath, "player.json");
         if (File.Exists(path))
         {
-            await using var fs = File.OpenRead(path);
-            var old = await JsonSerializer.DeserializeAsync<PlayerConfig>(fs, JsonOpts);
+            var old = await TryReadJsonAsync<PlayerConfig>(path);
             if (old != null && !string.IsNullOrEmpty(old.Username))
             {
                 var cfg = await LoadConfigAsync();
@@ -104,14 +104,7 @@ public class ConfigService : IConfigService
                 return _cachedConfig;
 
             var path = Path.Combine(RootPath, "config.json");
-            if (!File.Exists(path))
-            {
-                _cachedConfig = new LauncherConfig();
-                return _cachedConfig;
-            }
-
-            await using var fs = File.OpenRead(path);
-            _cachedConfig = await JsonSerializer.DeserializeAsync<LauncherConfig>(fs, JsonOpts) ?? new LauncherConfig();
+            _cachedConfig = await TryReadJsonAsync<LauncherConfig>(path) ?? new LauncherConfig();
             return _cachedConfig;
         }
         finally
@@ -130,9 +123,7 @@ public class ConfigService : IConfigService
     {
         _cachedConfig = config;
         _saveDebounceCts?.Cancel();
-        var path = Path.Combine(RootPath, "config.json");
-        await using var fs = File.Create(path);
-        await JsonSerializer.SerializeAsync(fs, config, JsonOpts);
+        await WriteJsonAtomicAsync(Path.Combine(RootPath, "config.json"), config);
     }
 
     private async Task DebouncedSaveConfigAsync(LauncherConfig config)
@@ -146,27 +137,59 @@ public class ConfigService : IConfigService
             await Task.Delay(300, token);
             if (token.IsCancellationRequested) return;
 
-            var path = Path.Combine(RootPath, "config.json");
-            await using var fs = File.Create(path);
-            await JsonSerializer.SerializeAsync(fs, config, JsonOpts);
+            await WriteJsonAtomicAsync(Path.Combine(RootPath, "config.json"), config);
         }
         catch (TaskCanceledException) { }
-        catch { }
+        catch (Exception ex)
+        {
+            Log($"Config kaydedilemedi: {ex.Message}");
+        }
     }
 
     public async Task<ModState> LoadModStateAsync()
     {
         var path = Path.Combine(RootPath, "modstate.json");
-        if (!File.Exists(path)) return new ModState();
-        await using var fs = File.OpenRead(path);
-        return await JsonSerializer.DeserializeAsync<ModState>(fs, JsonOpts) ?? new ModState();
+        return await TryReadJsonAsync<ModState>(path) ?? new ModState();
     }
 
     public async Task SaveModStateAsync(ModState state)
     {
-        var path = Path.Combine(RootPath, "modstate.json");
-        await using var fs = File.Create(path);
-        await JsonSerializer.SerializeAsync(fs, state, JsonOpts);
+        await WriteJsonAtomicAsync(Path.Combine(RootPath, "modstate.json"), state);
+    }
+
+    private async Task<T?> TryReadJsonAsync<T>(string path) where T : class
+    {
+        try
+        {
+            if (!File.Exists(path))
+                return null;
+
+            await using var fs = File.OpenRead(path);
+            return await JsonSerializer.DeserializeAsync<T>(fs, JsonOpts);
+        }
+        catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException or NotSupportedException)
+        {
+            Log($"JSON okuma hatası ({path}): {ex.Message}");
+            return null;
+        }
+    }
+
+    private async Task WriteJsonAtomicAsync<T>(string path, T value)
+    {
+        await _writeLock.WaitAsync();
+        try
+        {
+            var tmp = path + ".tmp";
+            await using (var fs = File.Create(tmp))
+            {
+                await JsonSerializer.SerializeAsync(fs, value, JsonOpts);
+            }
+            File.Move(tmp, path, true);
+        }
+        finally
+        {
+            _writeLock.Release();
+        }
     }
 
     public void Log(string message)
@@ -184,8 +207,20 @@ public class ConfigService : IConfigService
         _cachedConfig = null;
         _saveDebounceCts?.Cancel();
 
-        if (Directory.Exists(RootPath))
-            Directory.Delete(RootPath, true);
+        _writeLock.Wait();
+        try
+        {
+            if (Directory.Exists(RootPath))
+                Directory.Delete(RootPath, true);
+        }
+        catch (Exception ex)
+        {
+            Log($"Sıfırlama sırasında hata: {ex.Message}");
+        }
+        finally
+        {
+            _writeLock.Release();
+        }
 
         Directory.CreateDirectory(RootPath);
         Directory.CreateDirectory(GetModsPath());

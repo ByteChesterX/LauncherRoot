@@ -14,8 +14,13 @@ public partial class ModInfo : ObservableObject
     [ObservableProperty]
     private bool _enabled = true;
 
+    public string? OldFileName { get; set; }
+
     public bool Downloaded { get; set; }
-    public bool HasUpdate { get; set; }
+
+    [ObservableProperty]
+    private bool _hasUpdate;
+
     public string? LatestVersion { get; set; }
     public string? InstalledVersion { get; set; }
 }

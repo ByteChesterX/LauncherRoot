@@ -15,6 +15,8 @@ public class InstanceService : IInstanceService
         WriteIndented = true,
     };
 
+    private readonly SemaphoreSlim _writeLock = new(1, 1);
+
     public InstanceService()
     {
         var root = Path.Combine(
@@ -27,15 +29,12 @@ public class InstanceService : IInstanceService
 
     public async Task<List<Instance>> LoadInstancesAsync()
     {
-        if (!File.Exists(_instancesFilePath)) return [];
-        await using var fs = File.OpenRead(_instancesFilePath);
-        return await JsonSerializer.DeserializeAsync<List<Instance>>(fs, JsonOpts) ?? [];
+        return await TryReadJsonAsync<List<Instance>>(_instancesFilePath) ?? [];
     }
 
     public async Task SaveInstancesAsync(List<Instance> instances)
     {
-        await using var fs = File.Create(_instancesFilePath);
-        await JsonSerializer.SerializeAsync(fs, instances, JsonOpts);
+        await WriteJsonAtomicAsync(_instancesFilePath, instances);
     }
 
     public async Task<Instance?> GetInstanceAsync(string id)
@@ -146,18 +145,14 @@ public class InstanceService : IInstanceService
     public async Task<ModState> LoadModStateAsync(Instance instance)
     {
         var path = Path.Combine(_instancesDir, instance.InstanceDir, "modstate.json");
-        if (!File.Exists(path)) return new ModState();
-        await using var fs = File.OpenRead(path);
-        return await JsonSerializer.DeserializeAsync<ModState>(fs, JsonOpts) ?? new ModState();
+        return await TryReadJsonAsync<ModState>(path) ?? new ModState();
     }
 
     public async Task SaveModStateAsync(Instance instance, ModState state)
     {
         var dir = Path.Combine(_instancesDir, instance.InstanceDir);
         Directory.CreateDirectory(dir);
-        var path = Path.Combine(dir, "modstate.json");
-        await using var fs = File.Create(path);
-        await JsonSerializer.SerializeAsync(fs, state, JsonOpts);
+        await WriteJsonAtomicAsync(Path.Combine(dir, "modstate.json"), state);
     }
 
     public async Task<byte[]> ExportInstanceAsync(Instance instance)
@@ -188,46 +183,88 @@ public class InstanceService : IInstanceService
 
     public async Task<Instance?> ImportInstanceAsync(byte[] data)
     {
-        using var ms = new MemoryStream(data);
-        using var archive = new System.IO.Compression.ZipArchive(ms, System.IO.Compression.ZipArchiveMode.Read);
-
-        var metaEntry = archive.GetEntry("instance.json");
-        if (metaEntry == null) return null;
-
-        Instance? instance;
-        using (var reader = new StreamReader(metaEntry.Open()))
-            instance = JsonSerializer.Deserialize<Instance>(await reader.ReadToEndAsync(), JsonOpts);
-
-        if (instance == null) return null;
-
-        instance.Id = Guid.NewGuid().ToString("N")[..8];
-        instance.Name = $"{instance.Name} (imported)";
-        instance.CreatedAt = DateTime.Now;
-
-        var instanceDir = Path.Combine(_instancesDir, instance.InstanceDir);
-        Directory.CreateDirectory(Path.Combine(instanceDir, "mods"));
-
-        var modsDir = archive.GetEntry("mods/");
-        if (modsDir != null)
+        try
         {
+            using var ms = new MemoryStream(data);
+            using var archive = new System.IO.Compression.ZipArchive(ms, System.IO.Compression.ZipArchiveMode.Read);
+
+            var metaEntry = archive.GetEntry("instance.json");
+            if (metaEntry == null) return null;
+
+            Instance? instance;
+            using (var reader = new StreamReader(metaEntry.Open()))
+                instance = JsonSerializer.Deserialize<Instance>(await reader.ReadToEndAsync(), JsonOpts);
+
+            if (instance == null) return null;
+
+            instance.Id = Guid.NewGuid().ToString("N")[..8];
+            instance.Name = $"{instance.Name} (imported)";
+            instance.CreatedAt = DateTime.Now;
+
+            var instanceDir = Path.Combine(_instancesDir, instance.InstanceDir);
+            Directory.CreateDirectory(Path.Combine(instanceDir, "mods"));
+
             foreach (var entry in archive.Entries)
             {
-                if (entry.FullName.StartsWith("mods/") && !entry.FullName.EndsWith("/"))
-                {
-                    var path = Path.Combine(instanceDir, entry.FullName);
-                    Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-                    await using (var entryStream = entry.Open())
-                    await using (var fs = File.Create(path))
-                        await entryStream.CopyToAsync(fs);
-                }
+                if (!entry.FullName.StartsWith("mods/", StringComparison.Ordinal))
+                    continue;
+                if (entry.FullName.EndsWith("/") || entry.Name.Length == 0)
+                    continue;
+
+                var target = Path.GetFullPath(Path.Combine(instanceDir, entry.FullName));
+                var root = Path.GetFullPath(instanceDir);
+                if (!target.StartsWith(root + Path.DirectorySeparatorChar, StringComparison.Ordinal))
+                    continue;
+
+                Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+                await using (var entryStream = entry.Open())
+                await using (var fs = File.Create(target))
+                    await entryStream.CopyToAsync(fs);
             }
+
+            var instances = await LoadInstancesAsync();
+            instances.Add(instance);
+            await SaveInstancesAsync(instances);
+
+            return instance;
         }
+        catch (Exception ex) when (ex is InvalidDataException or JsonException or IOException or UnauthorizedAccessException or ArgumentException)
+        {
+            return null;
+        }
+    }
 
-        var instances = await LoadInstancesAsync();
-        instances.Add(instance);
-        await SaveInstancesAsync(instances);
+    private async Task<T?> TryReadJsonAsync<T>(string path) where T : class
+    {
+        try
+        {
+            if (!File.Exists(path)) return null;
 
-        return instance;
+            await using var fs = File.OpenRead(path);
+            return await JsonSerializer.DeserializeAsync<T>(fs, JsonOpts);
+        }
+        catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException or NotSupportedException)
+        {
+            return null;
+        }
+    }
+
+    private async Task WriteJsonAtomicAsync<T>(string path, T value)
+    {
+        await _writeLock.WaitAsync();
+        try
+        {
+            var tmp = path + ".tmp";
+            await using (var fs = File.Create(tmp))
+            {
+                await JsonSerializer.SerializeAsync(fs, value, JsonOpts);
+            }
+            File.Move(tmp, path, true);
+        }
+        finally
+        {
+            _writeLock.Release();
+        }
     }
 
     public async Task AddPlayTimeAsync(string instanceId, long seconds)

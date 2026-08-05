@@ -85,30 +85,38 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private async Task InitializeAsync()
     {
-        await _installer.InstallAsync();
-
-        var cfg = await _config.LoadConfigAsync();
-
-        if (!string.IsNullOrEmpty(Program.LaunchInstanceId))
+        try
         {
-            var instance = await _instances.GetInstanceAsync(Program.LaunchInstanceId);
-            if (instance != null)
-            {
-                cfg.SelectedInstanceId = instance.Id;
-                if (!string.IsNullOrEmpty(Program.LaunchPlayerName))
-                {
-                    var accounts = await _config.LoadAccountsAsync();
-                    var player = accounts.Find(a => a.Username == Program.LaunchPlayerName);
-                    if (player != null)
-                        await _config.SwitchAccountAsync(player.Id);
-                }
-                NavigateTo(PageType.MainMenu);
-                return;
-            }
-        }
+            await _installer.InstallAsync();
 
-        var hasPlayer = !string.IsNullOrEmpty(cfg.ActiveAccountId) || (await _config.LoadAccountsAsync()).Count > 0;
-        NavigateTo(hasPlayer ? PageType.MainMenu : PageType.PlayerSetup);
+            var cfg = await _config.LoadConfigAsync();
+
+            if (!string.IsNullOrEmpty(Program.LaunchInstanceId))
+            {
+                var instance = await _instances.GetInstanceAsync(Program.LaunchInstanceId);
+                if (instance != null)
+                {
+                    cfg.SelectedInstanceId = instance.Id;
+                    if (!string.IsNullOrEmpty(Program.LaunchPlayerName))
+                    {
+                        var accounts = await _config.LoadAccountsAsync();
+                        var player = accounts.Find(a => a.Username == Program.LaunchPlayerName);
+                        if (player != null)
+                            await _config.SwitchAccountAsync(player.Id);
+                    }
+                    NavigateTo(PageType.MainMenu);
+                    return;
+                }
+            }
+
+            var hasPlayer = !string.IsNullOrEmpty(cfg.ActiveAccountId) || (await _config.LoadAccountsAsync()).Count > 0;
+            NavigateTo(hasPlayer ? PageType.MainMenu : PageType.PlayerSetup);
+        }
+        catch (Exception ex)
+        {
+            _config.Log($"Başlangıç hatası: {ex.Message}");
+            NavigateTo(PageType.PlayerSetup);
+        }
     }
 
     private void SwitchViewModel(object? vm)

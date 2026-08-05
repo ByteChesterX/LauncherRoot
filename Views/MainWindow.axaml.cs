@@ -101,10 +101,17 @@ public partial class MainWindow : Window
 
     private static async Task ApplyStartupConfig(ConfigService config, LocalizationService localization)
     {
-        var cfg = await config.LoadConfigAsync();
+        try
+        {
+            var cfg = await config.LoadConfigAsync();
 
-        App.SetTheme(cfg.DarkTheme);
+            App.SetTheme(cfg.DarkTheme);
 
-        await localization.SetLanguageAsync(cfg.Language ?? "tr");
+            await localization.SetLanguageAsync(cfg.Language ?? "tr");
+        }
+        catch (Exception ex)
+        {
+            config.Log($"Başlangıç ayarları uygulanamadı: {ex.Message}");
+        }
     }
 }

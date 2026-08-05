@@ -769,15 +769,20 @@ public class MinecraftService : IMinecraftService, IDisposable
             if (!string.IsNullOrEmpty(preLaunchCmd))
             {
                 _config.Log($"Ön komut çalıştırılıyor: {preLaunchCmd}");
-                var prePsi = new ProcessStartInfo
+                try
                 {
-                    FileName = "/bin/bash",
-                    Arguments = $"-c \"{preLaunchCmd.Replace("\"", "\\\"")}\"",
-                    UseShellExecute = false,
-                };
-                var preProcess = Process.Start(prePsi);
-                if (preProcess != null)
-                    preProcess.WaitForExit();
+                    var prePsi = CreateShellStartInfo(preLaunchCmd);
+                    var preProcess = Process.Start(prePsi);
+                    if (preProcess != null)
+                    {
+                        await preProcess.WaitForExitAsync();
+                        _config.Log($"Ön komut çıkış kodu: {preProcess.ExitCode}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _config.Log($"Ön komut hatası: {ex.Message}");
+                }
             }
 
             var javaPath = FindJava(customJavaPath);
@@ -887,15 +892,23 @@ public class MinecraftService : IMinecraftService, IDisposable
             var effectiveUuid = FormatUuid(string.IsNullOrEmpty(uuid) ? Guid.NewGuid().ToString("N") : uuid);
             var token = !string.IsNullOrEmpty(accessToken) ? accessToken : "0";
 
-            var versionData = await GetVersionDataAsync(instance.Version);
-            var assetIndex = versionData?.GetProperty("assetIndex").GetProperty("id").GetString() ?? instance.Version;
+            string assetIndex;
+            try
+            {
+                var versionData = await GetVersionDataAsync(instance.Version);
+                assetIndex = versionData?.GetProperty("assetIndex").GetProperty("id").GetString() ?? instance.Version;
+            }
+            catch
+            {
+                assetIndex = instance.Version;
+            }
 
             string jvmArgs;
             string args;
 
             if (instance.Loader == "neoforge" && !string.IsNullOrEmpty(instance.LoaderVersion))
             {
-                var neoVersionId = $"neoforge-{instance.LoaderVersion}";
+                var neoVersionId = instance.LoaderVersion;
                 var neoJsonPath = Path.Combine(minecraftDir, "versions", neoVersionId, $"{neoVersionId}.json");
 
                 if (File.Exists(neoJsonPath))
@@ -1054,15 +1067,10 @@ public class MinecraftService : IMinecraftService, IDisposable
                     try
                     {
                         _config.Log($"Çıkış sonrası komut çalıştırılıyor: {postExitCmd}");
-                        var postPsi = new ProcessStartInfo
-                        {
-                            FileName = "/bin/bash",
-                            Arguments = $"-c \"{postExitCmd.Replace("\"", "\\\"")}\"",
-                            UseShellExecute = false,
-                        };
+                        var postPsi = CreateShellStartInfo(postExitCmd);
                         var postProcess = Process.Start(postPsi);
                         if (postProcess != null)
-                            postProcess.WaitForExit();
+                            await postProcess.WaitForExitAsync();
                     }
                     catch (Exception ex)
                     {
@@ -1080,6 +1088,29 @@ public class MinecraftService : IMinecraftService, IDisposable
             _config.Log($"Başlatma hatası: {ex.Message}");
             return false;
         }
+    }
+
+    private static ProcessStartInfo CreateShellStartInfo(string command)
+    {
+        var psi = new ProcessStartInfo
+        {
+            UseShellExecute = false,
+        };
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            psi.FileName = Environment.GetEnvironmentVariable("COMSPEC") ?? "cmd.exe";
+            psi.ArgumentList.Add("/d");
+            psi.ArgumentList.Add("/s");
+            psi.ArgumentList.Add("/c");
+            psi.ArgumentList.Add($"\"{command}\"");
+        }
+        else
+        {
+            psi.FileName = "bash";
+            psi.ArgumentList.Add("-c");
+            psi.ArgumentList.Add(command);
+        }
+        return psi;
     }
 
     private static string FormatUuid(string uuid)

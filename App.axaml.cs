@@ -21,10 +21,13 @@ public partial class App : Application
                 resources["BgPrimaryBrush"] = new SolidColorBrush(Color.Parse("#05080A"));
                 resources["BgSecondaryBrush"] = new SolidColorBrush(Color.Parse("#0A0E14"));
                 resources["BgCardBrush"] = new SolidColorBrush(Color.Parse("#0D1219"));
+                resources["BgCardElevatedBrush"] = new SolidColorBrush(Color.Parse("#111721"));
                 resources["BgHoverBrush"] = new SolidColorBrush(Color.Parse("#131B26"));
                 resources["BgSidebarBrush"] = new SolidColorBrush(Color.Parse("#030508"));
+                resources["BgGlassBrush"] = new SolidColorBrush(Color.Parse("#0D1219CC"));
                 resources["AccentBrush"] = new SolidColorBrush(Color.Parse("#3B82F6"));
                 resources["AccentHoverBrush"] = new SolidColorBrush(Color.Parse("#60A5FA"));
+                resources["AccentDimBrush"] = new SolidColorBrush(Color.Parse("#3B82F625"));
                 resources["SuccessBrush"] = new SolidColorBrush(Color.Parse("#166534"));
                 resources["WarningBrush"] = new SolidColorBrush(Color.Parse("#A16207"));
                 resources["ErrorBrush"] = new SolidColorBrush(Color.Parse("#B91C1C"));
@@ -32,16 +35,21 @@ public partial class App : Application
                 resources["TextSecondaryBrush"] = new SolidColorBrush(Color.Parse("#7E8EA0"));
                 resources["TextMutedBrush"] = new SolidColorBrush(Color.Parse("#3B4A5C"));
                 resources["BorderBrush"] = new SolidColorBrush(Color.Parse("#162032"));
+                resources["BorderLightBrush"] = new SolidColorBrush(Color.Parse("#1F2D42"));
+                resources["GlowBrush"] = new SolidColorBrush(Color.Parse("#3B82F615"));
             }
             else
             {
                 resources["BgPrimaryBrush"] = new SolidColorBrush(Color.Parse("#F8FAFC"));
                 resources["BgSecondaryBrush"] = new SolidColorBrush(Color.Parse("#F1F5F9"));
                 resources["BgCardBrush"] = new SolidColorBrush(Color.Parse("#FFFFFF"));
+                resources["BgCardElevatedBrush"] = new SolidColorBrush(Color.Parse("#F9FAFB"));
                 resources["BgHoverBrush"] = new SolidColorBrush(Color.Parse("#E2E8F0"));
                 resources["BgSidebarBrush"] = new SolidColorBrush(Color.Parse("#F8FAFC"));
+                resources["BgGlassBrush"] = new SolidColorBrush(Color.Parse("#FFFFFFE6"));
                 resources["AccentBrush"] = new SolidColorBrush(Color.Parse("#2563EB"));
                 resources["AccentHoverBrush"] = new SolidColorBrush(Color.Parse("#1D4ED8"));
+                resources["AccentDimBrush"] = new SolidColorBrush(Color.Parse("#2563EB1A"));
                 resources["SuccessBrush"] = new SolidColorBrush(Color.Parse("#16A34A"));
                 resources["WarningBrush"] = new SolidColorBrush(Color.Parse("#D97706"));
                 resources["ErrorBrush"] = new SolidColorBrush(Color.Parse("#DC2626"));
@@ -49,6 +57,8 @@ public partial class App : Application
                 resources["TextSecondaryBrush"] = new SolidColorBrush(Color.Parse("#475569"));
                 resources["TextMutedBrush"] = new SolidColorBrush(Color.Parse("#94A3B8"));
                 resources["BorderBrush"] = new SolidColorBrush(Color.Parse("#CBD5E1"));
+                resources["BorderLightBrush"] = new SolidColorBrush(Color.Parse("#E2E8F0"));
+                resources["GlowBrush"] = new SolidColorBrush(Color.Parse("#2563EB15"));
             }
         }
     }

@@ -254,9 +254,6 @@ public partial class ModManagementViewModel : ViewModelBase
         var updateTasks = InstalledMods.Select(mod => CheckModUpdateAsync(mod));
         await Task.WhenAll(updateTasks);
 
-        var copy = InstalledMods;
-        InstalledMods = [];
-        InstalledMods = copy;
         IsCheckingUpdates = false;
     }
 
@@ -267,6 +264,7 @@ public partial class ModManagementViewModel : ViewModelBase
             var info = await _modrinth.CheckUpdateAsync(mod.Slug, _instance.Version, _instance.Loader, mod.FileName ?? "");
             if (info?.HasUpdate == true)
             {
+                mod.OldFileName ??= mod.FileName;
                 mod.HasUpdate = true;
                 mod.LatestVersion = info.LatestVersion;
                 mod.DownloadUrl = info.DownloadUrl;
@@ -392,7 +390,8 @@ public partial class ModManagementViewModel : ViewModelBase
         {
             var data = await IconHttpClient.GetByteArrayAsync(hit.IconUrl);
             using var ms = new MemoryStream(data);
-            hit.Icon = new Bitmap(ms);
+            var bitmap = new Bitmap(ms);
+            Avalonia.Threading.Dispatcher.UIThread.Post(() => hit.Icon = bitmap);
         }
         catch { }
     }
@@ -485,9 +484,15 @@ public partial class ModManagementViewModel : ViewModelBase
 
         try
         {
-            var filePath = Path.Combine(_modsPath, mod.FileName);
-
+            var suffix = mod.Enabled ? "" : ".disabled";
+            var filePath = Path.Combine(_modsPath, mod.FileName + suffix);
             var backup = filePath + ".bak";
+
+            var oldName = mod.OldFileName != null && mod.OldFileName != mod.FileName
+                ? mod.OldFileName
+                : null;
+            var oldPath = oldName != null ? Path.Combine(_modsPath, oldName + suffix) : null;
+
             if (File.Exists(filePath)) File.Move(filePath, backup);
 
             try
@@ -497,7 +502,9 @@ public partial class ModManagementViewModel : ViewModelBase
                 await using var fs = File.Create(filePath);
                 await response.Content.CopyToAsync(fs);
                 if (File.Exists(backup)) File.Delete(backup);
+                if (oldPath != null && File.Exists(oldPath)) File.Delete(oldPath);
                 mod.HasUpdate = false;
+                mod.OldFileName = null;
                 _config.Log($"Mod güncellendi: {mod.Slug}");
             }
             catch

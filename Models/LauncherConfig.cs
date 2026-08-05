@@ -24,5 +24,6 @@ public class LauncherConfig
     public string ElybyClientSecret { get; set; } = "";
     public List<string> Groups { get; set; } = [];
     public List<ServerInfo> Servers { get; set; } = [];
+    public bool ServersInitialized { get; set; }
     public string CurseForgeApiKey { get; set; } = "";
 }

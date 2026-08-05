@@ -48,7 +48,7 @@
         <!-- Settings grid -->
         <Grid HorizontalAlignment="Center" Width="860"
               ColumnDefinitions="410,20,410"
-              RowDefinitions="Auto,14,Auto,14,Auto,14,Auto,14,Auto,14,Auto,14,Auto">
+              RowDefinitions="Auto,14,Auto,14,Auto,14,Auto,14,Auto,14,Auto,14,Auto,14,Auto">
 
           <!-- RAM -->
           <Border Grid.Row="0" Classes="card" Padding="20">
